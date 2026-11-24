@@ -1,13 +1,9 @@
 
-- Outstanding Graduate Award (CUMT), 2025.
+- SWU Third-class Scholarship (11/2024)
 
-- National Scholarship for Graduate Students (Ministry of Education, China), 2024.
+- SWU Third-class Scholarship (11/2025)
 
-- First-Prize Graduate Academic Scholarship (CUMT), 2023 & 2024.
+- SWU Third Prize, China International College Students’ Innovation Competition (08/2024)
 
-- Outstanding Undergraduate Thesis Award (Jiangsu Provincial Dept. of Education, China), 2022.
-
-- First-Prize Corporate Scholarship (CUMT), 2020.
-
-- First-Prize Undergraduate Academic Scholarship (CUMT), 2019.
+- SWU Second Prize, China National Undergraduate “Innovation, Creativity and Entrepreneurship” Challenge (05/2024)
 

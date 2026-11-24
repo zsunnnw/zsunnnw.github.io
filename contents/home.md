@@ -1,26 +1,23 @@
 
 
-[![senli1073](https://img.shields.io/badge/senli1073-github-blue?logo=github)](https://github.com/senli1073)
+[![zsunnnw](https://img.shields.io/badge/zsunnnw-github-blue?logo=github)](https://github.com/zsunnnw)
 
-He is a Ph.D. student in the Department of Earth and Planetary Sciences (EPS) at Harvard University, advised by Prof. Mostafa Mousavi. His research focuses on developing machine learning and foundation-model approaches for seismic signal processing, earthquake monitoring, and related geophysical applications.
-
+Proven expertise in clinical trial operations and biomedical research, complemented by advanced technical proficiency in statistical programming (R, Python, SQL) across diverse platforms. Demonstrated ability to work effectively both independently and collaboratively in cross-functional research teams. Strong record of translating complex analytical findings into clear, actionable insights through written, verbal, and data visualization communication.
 
 #### Contact
 
-Email: senli[at]fas.harvard.edu
+Email: zwang372@uw.edu
 
 
 #### Education
 
-Ph.D. in Earth and Planetary Sciences,
-Harvard University, 2026—Present
+M.S. in Biostatistics, Data science track, 
+University of Washington, 2026 - Present
 
-M.E. in Computer Science and Technology,
-China University of Mining and Technology, 2022—2025
-
-B.E. in Data Science and Big Data Technology,
-China University of Mining and Technology, 2018–2022
+B.S. in Biotechnology,
+Southwest University, 2022 — 2026
 
 
-#### Research Interests
-Machine Learning for Seismology; Foundation Model; Observational Seismology; Microseismic Monitoring
+
+
+

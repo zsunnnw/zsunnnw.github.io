@@ -7,9 +7,29 @@
     --skeleton-base: #e4e7eb;
     --skeleton-highlight: #f5f7fa;
 }
-
+##########大标题
 body {
     background: #ffffff;
+    font-family: "Optima", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+#####正文
+p, li {
+    font-family: "source sans3", sans-serif !important;
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+    text-align: left;
+}
+
+strong, b {
+    font-weight: 700 !important;
+}
+########
+p {
+    margin-bottom: 12px;
+}
 }
 
 .header {
@@ -169,8 +189,10 @@ body {
     animation: skeleton-shimmer 1450ms ease-in-out infinite;
 }
 
+####pub
+
 section header h2 {
-    font-family: "Kanit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+    font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
     color: var(--h-title-color);
     font-size: 2.3rem;
     line-height: 4rem;
@@ -180,7 +202,7 @@ section .main-body {
     font-size: 1.3rem;
     font-weight: 200;
     line-height: 2.4rem;
-    text-align: justify;
+    text-align: left;
 }
 
 /* Content column: 80% of the viewport on large screens (10% whitespace
