@@ -1,9 +1,20 @@
+window.MathJax = {
+    tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: false,
+        tags: 'all',
+    },
+};
 
 const content_dir = 'contents/'
 const config_file = 'config.yml'
 
 const allowedUrlProtocols = ['http:', 'https:', 'mailto:', 'tel:'];
-const configOnlyKeys = ['nav', 'sections', 'backgrounds', 'background-interval-ms', 'background-overlay'];
+const configOnlyKeys = [
+    'pages', 'resume-downloads', 'profile-links', 'affiliations', 'backgrounds',
+    'background-mode', 'background-interval-ms', 'background-overlay',
+];
 
 function stringifyValue(value) {
     return value == null ? '' : value.toString();
@@ -29,142 +40,197 @@ function setElementValue(element, value) {
     element.textContent = decodeText(value);
 }
 
-function renderNavigation(navItems) {
-    const navbarItems = document.getElementById('navbar-items');
-    if (!navbarItems || !Array.isArray(navItems)) {
-        return;
+function createLink(item) {
+    if (!item?.text || !item.href) {
+        return null;
     }
 
-    navbarItems.replaceChildren();
+    try {
+        const url = new URL(item.href, window.location.href);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+            return null;
+        }
+    } catch {
+        return null;
+    }
 
-    navItems.forEach((item) => {
-        if (!item || !item.text || !item.href) {
-            return;
+    const link = document.createElement('a');
+    link.href = item.href;
+    link.textContent = item.text;
+    return link;
+}
+
+function renderNavigation(pages, currentPage, resumes) {
+    const list = document.getElementById('navbar-items');
+
+    for (const page of pages) {
+        const link = createLink(page);
+        if (!link) continue;
+
+        const item = document.createElement('li');
+        item.className = 'nav-item';
+        link.className = 'nav-link';
+        if (page.id === currentPage) {
+            link.setAttribute('aria-current', 'page');
+        }
+        item.append(link);
+        list.append(item);
+    }
+
+    if (Array.isArray(resumes) && resumes.length) {
+        renderResumeMenu(list, resumes);
+    }
+}
+
+function renderResumeMenu(nav, resumes) {
+    const menu = document.createElement('ul');
+    menu.className = 'dropdown-menu dropdown-menu-end';
+    menu.setAttribute('aria-labelledby', 'resume-toggle');
+
+    for (const resume of resumes) {
+        const link = createLink(resume);
+        if (!link) continue;
+
+        link.className = 'dropdown-item';
+        link.lang = resume.lang;
+        link.download = resume.download;
+        link.append(' ', createLinkIcon('bi-download'));
+        const item = document.createElement('li');
+        item.append(link);
+        menu.append(item);
+    }
+
+    if (!menu.childElementCount) return;
+
+    const item = document.createElement('li');
+    item.className = 'nav-item dropdown';
+    const toggle = document.createElement('button');
+    toggle.id = 'resume-toggle';
+    toggle.type = 'button';
+    toggle.className = 'nav-link dropdown-toggle';
+    toggle.setAttribute('data-bs-toggle', 'dropdown');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.textContent = 'Resume';
+    item.append(toggle, menu);
+    nav.append(item);
+}
+
+function createLinkIcon(name) {
+    const icon = document.createElement('i');
+    icon.classList.add('bi', name);
+    icon.setAttribute('aria-hidden', 'true');
+    return icon;
+}
+
+function renderProfileLinks(links) {
+    const container = document.getElementById('profile-links');
+    if (!container) return;
+
+    for (const item of links) {
+        const link = createLink(item);
+        if (!link) continue;
+
+        if (item.style === 'linkedin') {
+            link.className = 'profile-linkedin';
+            link.setAttribute('aria-label', 'LinkedIn profile');
+            link.replaceChildren(createLinkIcon(item.icon));
+            container.append(link);
+            continue;
         }
 
-        const listItem = document.createElement('li');
-        const link = document.createElement('a');
+        link.className = 'profile-button';
+        if (item.style) link.classList.add('profile-button-' + item.style);
 
-        listItem.className = 'nav-item';
-        link.className = 'nav-link me-lg-3';
-        link.href = item.href;
-        link.textContent = decodeText(item.text);
+        const label = document.createElement('span');
+        label.className = 'profile-button-label';
+        label.textContent = item.label || item.text;
 
-        listItem.appendChild(link);
-        navbarItems.appendChild(listItem);
-    });
-}
-
-function normalizeSections(sections) {
-    if (!Array.isArray(sections)) {
-        return [];
-    }
-
-    return sections
-        .map((section) => {
-            if (typeof section === 'string' && section.trim() !== '') {
-                return {
-                    id: section,
-                    nav: section.toUpperCase(),
-                    href: '#' + section,
-                };
-            }
-
-            if (!section || typeof section !== 'object' || !section.id) {
-                return null;
-            }
-
-            return {
-                id: section.id,
-                nav: section.nav || section.text || section.id.toUpperCase(),
-                title: section.title || section.heading || section.nav || section.text || section.id.toUpperCase(),
-                icon: section.icon || '',
-                href: section.href || '#' + section.id,
-            };
-        })
-        .filter(Boolean);
-}
-
-function getNavigationItems(yml) {
-    const sections = normalizeSections(yml.sections);
-    if (sections.length > 0) {
-        return sections.map((section) => ({
-            text: section.nav,
-            href: section.href,
-        }));
-    }
-
-    return Array.isArray(yml.nav) ? yml.nav : [];
-}
-
-function activateScrollSpy() {
-    const mainNav = document.body.querySelector('#mainNav');
-    if (mainNav) {
-        new bootstrap.ScrollSpy(document.body, {
-            target: '#mainNav',
-            offset: 74,
-        });
+        const platform = document.createElement('span');
+        platform.className = 'profile-button-platform';
+        if (item.icon) platform.append(createLinkIcon(item.icon));
+        platform.append(item.text);
+        link.replaceChildren(label, platform);
+        container.append(link);
     }
 }
 
-function bindResponsiveNavbar() {
-    const navbarToggler = document.body.querySelector('.navbar-toggler');
-    const responsiveNavItems = [].slice.call(
-        document.querySelectorAll('#navbarResponsive .nav-link')
-    );
+function renderAffiliationLogo(link, affiliation) {
+    if (!affiliation.logo) return;
 
-    responsiveNavItems.map(function (responsiveNavItem) {
-        responsiveNavItem.addEventListener('click', () => {
-            if (navbarToggler && window.getComputedStyle(navbarToggler).display !== 'none') {
-                navbarToggler.click();
+    const frame = document.createElement('span');
+    frame.className = 'affiliation-logo';
+    if (affiliation['logo-background']) frame.dataset.background = affiliation['logo-background'];
+
+    const image = document.createElement('img');
+    image.src = affiliation.logo;
+    image.alt = affiliation.text;
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    image.referrerPolicy = 'no-referrer';
+    image.addEventListener('error', () => { link.textContent = affiliation.text; }, { once: true });
+    frame.append(image);
+    link.replaceChildren(frame);
+}
+
+function renderAffiliations(links) {
+    const list = document.getElementById('affiliation-links');
+
+    for (const item of links) {
+        const link = createLink(item);
+        if (!link) continue;
+
+        const entry = document.createElement('li');
+        entry.className = 'affiliation';
+
+        renderAffiliationLogo(link, item);
+
+        link.className = 'affiliation-university';
+        entry.append(link);
+
+        if (item.departments?.length) {
+            const departments = document.createElement('ul');
+            departments.className = 'affiliation-departments';
+
+            for (const department of item.departments) {
+                const departmentLink = createLink(department);
+                if (!departmentLink) continue;
+
+                renderAffiliationLogo(departmentLink, department);
+                const departmentEntry = document.createElement('li');
+                departmentEntry.append(departmentLink);
+                departments.append(departmentEntry);
             }
-        });
-    });
+
+            entry.append(departments);
+        }
+
+        list.append(entry);
+    }
 }
 
 function renderSections(sections) {
     const sectionsContainer = document.getElementById('sections');
-    if (!sectionsContainer) {
-        return;
-    }
 
-    sectionsContainer.replaceChildren();
-
-    sections.forEach((section, index) => {
+    for (const section of sections) {
         const sectionElement = document.createElement('section');
         const container = document.createElement('div');
-        const header = document.createElement('header');
-        const title = document.createElement('h2');
         const body = document.createElement('div');
 
         sectionElement.id = section.id;
-        sectionElement.className = [
-            index % 2 === 0 ? 'bg-gradient-primary-to-secondary-light' : 'bg-gradient-primary-to-secondary-gray',
-        ].join(' ');
-
         container.className = 'container px-5';
-
-        if (section.titleId) {
-            title.id = section.titleId;
-        }
-
-        if (section.icon) {
-            const icon = document.createElement('i');
-            icon.classList.add('bi', section.icon);
-            title.appendChild(icon);
-            title.appendChild(document.createTextNode('\u00a0'));
-        }
-
-        title.appendChild(document.createTextNode(decodeText(section.title)));
         body.className = 'main-body';
         body.id = section.id + '-md';
 
-        header.appendChild(title);
-        container.appendChild(header);
-        container.appendChild(body);
-        sectionElement.appendChild(container);
-        sectionsContainer.appendChild(sectionElement);
-    });
+        if (section.title) {
+            const heading = document.createElement('h2');
+            heading.textContent = section.title;
+            container.append(heading);
+        }
+
+        container.append(body);
+        sectionElement.append(container);
+        sectionsContainer.append(sectionElement);
+    }
 }
 
 function normalizeBackgrounds(backgrounds) {
@@ -190,6 +256,10 @@ function chooseInitialBackgroundIndex(backgroundCount) {
 window.chooseInitialBackgroundIndex = chooseInitialBackgroundIndex;
 
 function initBackgroundSlideshow(yml) {
+    if (yml['background-mode'] === 'solid') {
+        return;
+    }
+
     const backgrounds = normalizeBackgrounds(yml.backgrounds);
     const layers = [...document.querySelectorAll('.top-section-bg')];
     const interval = Number(yml['background-interval-ms']) || 7000;
@@ -202,6 +272,8 @@ function initBackgroundSlideshow(yml) {
     if (backgrounds.length === 0 || layers.length === 0) {
         return;
     }
+
+    document.getElementById('top-section')?.classList.add('has-photo-background');
 
     let activeLayer = 0;
     let activeBackground = chooseInitialBackgroundIndex(backgrounds.length);
@@ -267,7 +339,10 @@ function typesetMath() {
 
 function loadConfig() {
     return fetch(content_dir + config_file)
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error('Could not load site configuration');
+            return response.text();
+        })
         .then(text => jsyaml.load(text) || {})
         .catch(error => {
             console.log(error);
@@ -285,7 +360,6 @@ function applyConfig(yml) {
         const value = yml[key];
 
         if (!element) {
-            console.log("Unknown id and value: " + key + "," + stringifyValue(value))
             return;
         }
 
@@ -297,29 +371,23 @@ function applyConfig(yml) {
     });
 }
 
-function getConfiguredSections(yml) {
-    const sections = normalizeSections(yml.sections);
-    if (sections.length > 0) {
-        return sections.map((section) => section.id);
-    }
-
-    return [...document.querySelectorAll('[id$="-md"]')].map((element) => {
-        return element.id.replace(/-md$/, '');
-    });
-}
-
-function loadMarkdownSection(name) {
-    return fetch(content_dir + name + '.md')
-        .then(response => response.text())
-        .then(markdown => {
-            const target = document.getElementById(name + '-md');
-            if (!target) {
-                console.log("Unknown markdown section: " + name);
-                return;
+function loadMarkdownSection(section) {
+    return fetch(content_dir + (section.file || section.id) + '.md')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Could not load section: ' + section.id);
             }
 
+            return response.text();
+        })
+        .then(markdown => {
+            const target = document.getElementById(section.id + '-md');
             const html = sanitizeMarkdownHtml(marked.parse(markdown));
             target.innerHTML = html;
+            if (section.id === 'experience' && document.body.dataset.page === 'home') {
+                target.querySelectorAll('.work-detail').forEach(detail => detail.remove());
+            }
+            if (section.id === 'life') window.initLifePage?.(target);
         })
         .catch(error => console.log(error));
 }
@@ -329,24 +397,43 @@ function markSiteReady() {
     document.body.classList.add('site-ready');
 }
 
-window.addEventListener('DOMContentLoaded', event => {
+window.addEventListener('DOMContentLoaded', () => {
     marked.use({ mangle: false, headerIds: false });
 
     loadConfig()
         .then((yml) => {
-            applyConfig(yml);
-            const sections = normalizeSections(yml.sections);
+            const currentPage = document.body.dataset.page;
+            const pages = yml.pages || [];
+            const page = pages.find(item => item.id === currentPage);
+            const sections = page?.sections || [];
 
-            renderNavigation(getNavigationItems(yml));
+            // The original homepage exposed Projects and Life as anchors.
+            const oldSection = window.location.hash.slice(1);
+            if (currentPage === 'home' && ['projects', 'life'].includes(oldSection)) {
+                const destination = pages.find(item => item.id === oldSection);
+                if (destination) {
+                    window.location.replace(destination.href);
+                    return;
+                }
+            }
+
+            applyConfig(yml);
+            renderNavigation(pages, currentPage, yml['resume-downloads']);
+            renderProfileLinks(yml['profile-links'] || []);
+            renderAffiliations(yml.affiliations || []);
             renderSections(sections);
             initBackgroundSlideshow(yml);
-            activateScrollSpy();
-            bindResponsiveNavbar();
 
-            return Promise.all(getConfiguredSections(yml).map(loadMarkdownSection));
+            return Promise.all(sections.map(loadMarkdownSection));
         })
         .then(() => typesetMath())
         .catch(error => console.log(error))
-        .finally(() => markSiteReady());
-
-}); 
+        .finally(() => markSiteReady())
+        .then(() => {
+            // Markdown anchor targets do not exist until the content has loaded.
+            const target = document.getElementById(window.location.hash.slice(1));
+            if (target && document.getElementById('sections').contains(target)) {
+                target.scrollIntoView({ behavior: 'instant' });
+            }
+        });
+});

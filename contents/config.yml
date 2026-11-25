@@ -1,34 +1,86 @@
-title: Zishan Wang's Homepage
-page-top-title: Zishan Wang
-top-section-bg-text: Biostatistics 
+top-section-bg-text: Zishan Wang
+background-mode: solid
 backgrounds:
   - static/assets/background/background_0.jpg
   - static/assets/background/background_1.jpg
   - static/assets/background/background_2.jpg
-  - static/assets/background/background_3.jpg  
+  - static/assets/background/background_3.jpg
   - static/assets/background/background_4.jpg
   - static/assets/background/background_5.jpg
   - static/assets/background/background_6.png
   - static/assets/background/background_7.png
 background-interval-ms: 7000
 background-overlay: 0.52
-copyright-text: '&copy; Zishan Wang 2023-2026. All Rights Reserved.'
+copyright-text: '&copy; Zishan Wang 2026'
 github-link:
-  text: Github
-  href: https://github.com/zunnnw
+  text: GitHub
+  href: https://github.com/zsunnnw
 license-link:
   text: License
-  href: https://github.com/zunnnw/zunnnw.github.io/blob/main/LICENSE
-sections:
+  href: https://github.com/zsunnnw/zsunnnw.github.io/blob/main/LICENSE
+profile-links:
+  - text: GitHub
+    label: zsunnnw
+    icon: bi-github
+    style: github
+    href: https://github.com/zsunnnw
+  - text: LinkedIn
+    icon: bi-linkedin
+    style: linkedin
+    href: https://www.linkedin.com/in/zishan-wang33
+  # Add a Bilibili entry here once the public profile URL is available.
+affiliations:
+  - text: University of Washington
+    href: https://www.washington.edu/
+    logo: https://cdn.uw.edu/wp-content/uploads/sites/230/2023/11/02134828/Signature_Left_Purple_Hex.png
+    departments:
+      - text: University of Washington School of Public Health
+        href: https://sph.washington.edu/
+        logo: https://sph.washington.edu/themes/sph_boundless/images/sph-uw-logotype.png
+        logo-background: uw
+      - text: University of Washington Department of Biostatistics
+        href: https://www.biostat.washington.edu/
+  - text: Southwest University
+    href: https://swu.edu.cn/
+    logo: https://swu.edu.cn/images/logo0603.png
+    logo-background: swu
+    departments:
+      - text: Southwest University Westa College
+        href: https://westa.swu.edu.cn/
+        logo: https://westa.swu.edu.cn/assets/logo.png
+resume-downloads:
+  - text: English
+    lang: en
+    href: static/assets/Resume_EN.pdf
+    download: Resume_EN.pdf
+  - text: 中文
+    lang: zh-Hans
+    href: static/assets/Resume_CH.pdf
+    download: Resume_CH.pdf
+pages:
   - id: home
-    nav: HOME
-    title: Zishan Wang
-    href: '#page-top' # Default to '#<id>' if not specified
-  - id: publications
-    nav: PUBLICATIONS
-    title: PUBLICATIONS
-    icon: bi-file-text-fill
-  - id: awards
-    nav: AWARDS
-    title: AWARDS
-    icon: bi-award-fill
+    text: Home
+    href: ./
+    sections:
+      - id: education
+        file: home
+        title: Education
+      - id: experience
+        title: Experience
+      - id: publications
+        title: Publications
+      - id: awards
+        title: Awards
+  - id: projects
+    text: Work
+    href: projects.html
+    sections:
+      - id: projects
+        title: Selected projects
+      - id: experience
+        title: Experience
+  - id: life
+    text: Life
+    href: life.html
+    sections:
+      - id: life
