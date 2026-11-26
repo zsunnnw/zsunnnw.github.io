@@ -372,7 +372,10 @@ function applyConfig(yml) {
 }
 
 function loadMarkdownSection(section) {
-    return fetch(content_dir + (section.file || section.id) + '.md')
+    const url = new URL(content_dir + (section.file || section.id) + '.md', window.location.href);
+    const revision = document.body.dataset.contentRevision;
+    if (revision) url.searchParams.set('v', revision);
+    return fetch(url, { cache: 'no-cache' })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Could not load section: ' + section.id);
