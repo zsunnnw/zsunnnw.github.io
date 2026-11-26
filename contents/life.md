@@ -36,7 +36,7 @@
 <!-- Use the matching map location’s data-place for each photo. Edit figcaption for its description. -->
 
 <figure class="gallery-slide gallery-chongqing" data-place="chongqing">
-<img src="static/assets/img/bada091fae044c5e91bf65a3a6a560a3.jpg" alt="" loading="lazy" width="4284" height="5712">
+<img src="static/assets/img/cq1.jpg" alt="" loading="lazy" width="4284" height="5712">
 <figcaption>Graduation at Westa College</figcaption>
 </figure>
 <figure class="gallery-slide gallery-chongqing" data-place="chongqing">
