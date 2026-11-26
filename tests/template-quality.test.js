@@ -83,7 +83,7 @@ assert.match(mainCss, /\.skeleton-line-short\s*\{[\s\S]*width:\s*68%/, 'short sk
 
 assert.deepEqual(pages.map(page => page.id), ['home', 'projects', 'life']);
 assert.deepEqual(pages[0].sections.map(section => section.id), ['education', 'experience', 'publications', 'awards']);
-assert.deepEqual(pages[1].sections.map(section => section.id), ['projects', 'experience']);
+assert.deepEqual(pages[1].sections.map(section => section.id), ['projects']);
 assert.deepEqual(pages[2].sections.map(section => section.id), ['life']);
 
 for (const page of pages) {
@@ -93,6 +93,17 @@ for (const page of pages) {
   for (const section of page.sections) {
     assert.ok(read(`contents/${section.file || section.id}.md`).trim(), `content should exist: ${section.id}`);
   }
+}
+
+const work = pages.find(page => page.id === 'projects');
+const projects = read('contents/projects.md');
+for (const detail of work.details) {
+  const href = `project-${detail.id}.html`;
+  const document = read(href);
+  assert.ok(projects.includes(`href="${href}"`), `Work should link to ${href}`);
+  assert.ok(document.includes(`data-page="${detail.id}" data-nav-page="projects"`));
+  assert.ok(document.includes('id="theme-toggle"'));
+  assert.ok(read(`contents/${detail.sections[0].file}.md`).trim());
 }
 
 console.log('template quality checks passed');

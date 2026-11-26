@@ -404,7 +404,8 @@ window.addEventListener('DOMContentLoaded', () => {
         .then((yml) => {
             const currentPage = document.body.dataset.page;
             const pages = yml.pages || [];
-            const page = pages.find(item => item.id === currentPage);
+            const page = pages.find(item => item.id === currentPage)
+                || pages.flatMap(item => item.details || []).find(item => item.id === currentPage);
             const sections = page?.sections || [];
 
             // The original homepage exposed Projects and Life as anchors.
@@ -418,7 +419,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
 
             applyConfig(yml);
-            renderNavigation(pages, currentPage, yml['resume-downloads']);
+            renderNavigation(pages, document.body.dataset.navPage || currentPage, yml['resume-downloads']);
             renderProfileLinks(yml['profile-links'] || []);
             renderAffiliations(yml.affiliations || []);
             renderSections(sections);

@@ -77,8 +77,19 @@ pages:
     sections:
       - id: projects
         title: Selected projects
-      - id: experience
-        title: Experience
+    details:
+      - id: single-cell
+        sections:
+          - id: project-content
+            file: project-single-cell
+      - id: afp-scan
+        sections:
+          - id: project-content
+            file: project-afp-scan
+      - id: microalgae
+        sections:
+          - id: project-content
+            file: project-microalgae
   - id: life
     text: Life
     href: life.html

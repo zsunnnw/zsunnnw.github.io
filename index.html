@@ -18,6 +18,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baskervville&amp;family=Manrope:wght@400..700&amp;display=swap" rel="stylesheet" />
 
+    <script src="static/js/theme.js"></script>
+
     <!-- Core theme CSS (includes Bootstrap)-->
     <link type="text/css" href="static/css/main.css" rel="stylesheet" />
 
@@ -51,6 +53,10 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul id="navbar-items" class="navbar-nav ms-auto me-4 my-3 my-lg-0"></ul>
             </div>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Night mode" aria-pressed="false" hidden>
+                <span class="theme-icon-moon" aria-hidden="true">☾</span>
+                <span class="theme-icon-sun" aria-hidden="true">☀</span>
+            </button>
         </div>
     </nav>
 
@@ -69,10 +75,11 @@
             </div>
             <div id="avatar">
                 <img src="static/assets/img/photo.jpeg" alt="Portrait of Zishan Wang" width="2000" height="2666">
-                <address class="hero-contact">
-                    <span>zwang372@uw.edu</span>
-                    <span>Seattle, WA</span>
-                </address>
+                <div class="hero-contact">
+                    <strong>University of Washington</strong>
+                    <span>Seattle, Washington</span>
+                    <span class="hero-email">zwang372@uw.edu</span>
+                </div>
             </div>
         </div>
     </section>

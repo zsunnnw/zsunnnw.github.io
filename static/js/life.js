@@ -2,8 +2,25 @@ window.initLifePage = function initLifePage(section) {
     const gallery = section.querySelector('#life-gallery');
     if (!gallery) return;
 
-    setupLifeGallery(gallery, Array.from(gallery.querySelectorAll('.gallery-slide')));
-    setupTravelMap(section.querySelector('#travel-map'));
+    const slides = [...gallery.querySelectorAll('.gallery-slide')];
+    const albums = new Map();
+    for (const slide of slides) {
+        const place = slide.dataset.place?.trim().toLowerCase();
+        if (!place) continue;
+        if (!albums.has(place)) albums.set(place, []);
+        albums.get(place).push(slide);
+    }
+
+    const heading = gallery.querySelector('#gallery-place-heading');
+    let disposeGallery;
+    function openAlbum(place) {
+        disposeGallery?.();
+        heading.textContent = 'Photos · ' + place.name;
+        disposeGallery = setupLifeGallery(gallery, albums.get(place.id));
+    }
+
+    const connected = setupTravelMap(section.querySelector('#travel-map'), albums, openAlbum);
+    if (!connected) setupLifeGallery(gallery, slides);
 };
 
 function lifeButton(className, text, label = text) {
@@ -63,6 +80,8 @@ function setupLifeGallery(gallery, slides) {
     if (loop) controls.append(buttons);
     gallery.append(controls);
 
+    const listeners = new AbortController();
+    const listen = (target, event, handle) => target.addEventListener(event, handle, { signal: listeners.signal });
     let position = loop ? 2 : 0;
     let playing = loop && !motion.matches;
     let hovering = false;
@@ -140,52 +159,61 @@ function setupLifeGallery(gallery, slides) {
         schedule();
     }
 
-    viewport.addEventListener('pointerenter', event => {
+    listen(viewport, 'pointerenter', event => {
         if (event.pointerType !== 'mouse') return;
         hovering = true;
         schedule();
     });
-    viewport.addEventListener('pointerleave', () => {
+    listen(viewport, 'pointerleave', () => {
         hovering = false;
         schedule();
     });
-    viewport.addEventListener('pointerdown', event => {
+    listen(viewport, 'pointerdown', event => {
         if (event.pointerType === 'touch') swipeStart = event.clientX;
     });
-    viewport.addEventListener('pointerup', event => {
+    listen(viewport, 'pointerup', event => {
         if (swipeStart === undefined) return;
         const distance = event.clientX - swipeStart;
         swipeStart = undefined;
         if (Math.abs(distance) > 45) advance(distance < 0 ? 1 : -1);
     });
-    viewport.addEventListener('pointercancel', () => { swipeStart = undefined; });
+    listen(viewport, 'pointercancel', () => { swipeStart = undefined; });
 
-    track.addEventListener('transitionend', event => {
+    listen(track, 'transitionend', event => {
         if (event.target === track && event.propertyName === 'transform') finishWrap();
     });
-    previous.addEventListener('click', () => advance(-1));
-    next.addEventListener('click', () => advance(1));
-    toggle.addEventListener('click', () => setPlaying(!playing));
-    controls.addEventListener('keydown', event => {
+    listen(previous, 'click', () => advance(-1));
+    listen(next, 'click', () => advance(1));
+    listen(toggle, 'click', () => setPlaying(!playing));
+    listen(controls, 'keydown', event => {
         if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
         event.preventDefault();
         advance(event.key === 'ArrowLeft' ? -1 : 1);
     });
-    document.addEventListener('visibilitychange', schedule);
-    motion.addEventListener('change', () => setPlaying(!motion.matches));
+    listen(document, 'visibilitychange', schedule);
+    listen(motion, 'change', () => setPlaying(!motion.matches));
 
     images.forEach((image, index) => {
         if (!image) return;
-        image.addEventListener('load', () => {
+        listen(image, 'load', () => {
             const ratio = getPhotoRatio(image);
             if (ratio === ratios[index]) return;
             ratios[index] = ratio;
             layout(true);
         });
     });
-    new ResizeObserver(() => layout()).observe(viewport);
+    const resize = new ResizeObserver(() => layout());
+    resize.observe(viewport);
     layout();
     setPlaying(playing);
+
+    return () => {
+        listeners.abort();
+        resize.disconnect();
+        window.clearTimeout(timer);
+        window.clearTimeout(wrapTimer);
+        controls.remove();
+    };
 }
 
 function projectTravelPoint(longitude, latitude) {
@@ -223,64 +251,132 @@ function drawTravelLand(surface) {
         });
 }
 
-function setupTravelMap(container) {
-    if (!container) return;
+function setupTravelMap(container, albums, openAlbum) {
+    if (!container) return false;
 
-    const places = Array.from(container.querySelectorAll('[data-place][data-lon][data-lat]'), item => {
-        const latitude = Number(item.dataset.lat);
-        const longitude = Number(item.dataset.lon);
-        const [x, y] = projectTravelPoint(longitude, latitude);
-        return { name: item.textContent.trim(), x, y };
+    const places = [...container.querySelectorAll('[data-place][data-lon][data-lat]')].map(item => {
+        const id = item.dataset.place.trim().toLowerCase();
+        const [x, y] = projectTravelPoint(Number(item.dataset.lon), Number(item.dataset.lat));
+        return { id, name: item.textContent.trim(), x, y, slides: albums.get(id) || [] };
     }).filter(({ x, y }) => x >= 0 && x <= 1000 && y >= 0 && y <= 420);
-    if (!places.length) return;
+    if (!places.length) return false;
 
     const surface = document.createElement('div');
     surface.className = 'travel-surface';
     surface.setAttribute('role', 'group');
     surface.setAttribute('aria-label', 'World map of places visited');
 
-    const label = document.createElement('p');
-    label.className = 'travel-pin-label';
-    label.hidden = true;
-    surface.append(label);
+    const preview = document.createElement('div');
+    preview.className = 'travel-pin-preview';
+    preview.hidden = true;
+    preview.setAttribute('aria-hidden', 'true');
 
-    let selected = null;
+    const thumbnail = document.createElement('img');
+    thumbnail.alt = '';
+    const previewName = document.createElement('strong');
+    const previewCount = document.createElement('span');
+    preview.append(thumbnail, previewName, previewCount);
 
-    function show(index) {
-        // Neighboring dots can overlap at world scale. Show their names together.
-        const place = places[index];
-        const nearby = place ? places.filter(other => Math.hypot(
-            (place.x - other.x) * surface.clientWidth / 1000,
-            (place.y - other.y) * surface.clientHeight / 420,
-        ) <= 14) : [];
-        label.textContent = nearby.map(other => other.name).join(' · ');
-        label.hidden = !nearby.length;
+    const albumList = document.createElement('div');
+    albumList.className = 'travel-albums';
+    albumList.setAttribute('role', 'group');
+    albumList.setAttribute('aria-label', 'Places with photos');
 
-        markers.forEach((pin, markerIndex) => {
-            pin.classList.toggle('travel-pin-lit', nearby.includes(places[markerIndex]));
-            pin.setAttribute('aria-pressed', String(markerIndex === selected));
+    let selected;
+    let activePreview;
+    function describePhotos(count) {
+        return count ? count + (count === 1 ? ' photo' : ' photos') : 'No photos yet';
+    }
+
+    function showPreview(entry, button) {
+        const { place, pin } = entry;
+        const cover = place.slides[0]?.querySelector('img');
+        thumbnail.hidden = !cover;
+        if (cover) thumbnail.src = cover.src;
+        else thumbnail.removeAttribute('src');
+
+        activePreview?.entry.pin.classList.remove('travel-pin-previewing');
+        activePreview = { entry, button };
+        pin.classList.add('travel-pin-previewing');
+        previewName.textContent = place.name;
+        previewCount.textContent = describePhotos(place.slides.length);
+
+        const anchor = button.getBoundingClientRect();
+        const origin = container.getBoundingClientRect();
+        preview.hidden = false;
+        const below = anchor.top < preview.offsetHeight + 18;
+        const left = anchor.left + anchor.width / 2 - origin.left;
+        const top = (below ? anchor.bottom : anchor.top) - origin.top;
+        preview.style.setProperty('--preview-x', left + 'px');
+        preview.style.setProperty('--preview-y', top + 'px');
+        preview.classList.toggle('travel-pin-preview-below', below);
+    }
+
+    function hidePreview(button) {
+        if (activePreview?.button !== button) return;
+        activePreview.entry.pin.classList.remove('travel-pin-previewing');
+        activePreview = undefined;
+        preview.hidden = true;
+    }
+
+    function connectPreview(button, entry) {
+        button.addEventListener('pointerenter', event => {
+            if (event.pointerType !== 'touch') showPreview(entry, button);
+        });
+        button.addEventListener('pointerleave', event => {
+            if (event.pointerType !== 'touch' && !button.matches(':focus-visible')) hidePreview(button);
+        });
+        button.addEventListener('focus', () => showPreview(entry, button));
+        button.addEventListener('blur', () => hidePreview(button));
+        button.addEventListener('keydown', event => {
+            if (event.key === 'Escape') hidePreview(button);
+        });
+        button.addEventListener('click', () => {
+            select(entry);
+            showPreview(entry, button);
         });
     }
 
-    const markers = places.map((place, index) => {
-        const pin = lifeButton('travel-pin', '', place.name);
-        pin.setAttribute('aria-pressed', 'false');
+    function select(entry) {
+        if (selected === entry || !entry.place.slides.length) return;
+        selected?.pin.setAttribute('aria-pressed', 'false');
+        selected?.album.setAttribute('aria-pressed', 'false');
+        selected = entry;
+        entry.pin.setAttribute('aria-pressed', 'true');
+        entry.album.setAttribute('aria-pressed', 'true');
+        openAlbum(entry.place);
+    }
+
+    const entries = places.map(place => {
+        const photoCount = place.slides.length;
+        const pin = lifeButton('travel-pin', '', place.name + ', ' + describePhotos(photoCount));
         pin.style.left = place.x / 10 + '%';
         pin.style.top = place.y * 100 / 420 + '%';
-        pin.addEventListener('pointerenter', event => {
-            if (event.pointerType === 'mouse') show(index);
-        });
-        pin.addEventListener('pointerleave', () => show(selected));
-        pin.addEventListener('focus', () => show(index));
-        pin.addEventListener('blur', () => show(selected));
-        pin.addEventListener('click', () => {
-            selected = selected === index ? null : index;
-            show(selected);
-        });
+        pin.classList.toggle('travel-pin-has-photos', photoCount > 0);
+        const entry = { place, pin };
+        connectPreview(pin, entry);
         surface.append(pin);
-        return pin;
+
+        if (photoCount) {
+            const album = lifeButton('travel-album', place.name);
+            for (const button of [pin, album]) {
+                button.setAttribute('aria-pressed', 'false');
+                button.setAttribute('aria-controls', 'life-gallery');
+            }
+            entry.album = album;
+            connectPreview(album, entry);
+            albumList.append(album);
+        }
+        return entry;
     });
 
     container.replaceChildren(surface);
     drawTravelLand(surface);
+    if (albumList.childElementCount) container.append(albumList);
+    container.append(preview);
+
+    const firstAlbum = entries.find(entry => entry.place.id === albums.keys().next().value && entry.album)
+        || entries.find(entry => entry.album);
+    if (firstAlbum) select(firstAlbum);
+    return Boolean(firstAlbum);
 }
